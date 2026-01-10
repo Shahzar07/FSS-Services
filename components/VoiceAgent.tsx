@@ -1,10 +1,10 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, X, MessageSquareText, ShieldCheck, Loader2, Volume2, Waves } from 'lucide-react';
+import { Mic, MicOff, X, MessageSquareText, ShieldCheck, Loader2, Volume2, Waves, AlertCircle, Headphones } from 'lucide-react';
 import { GoogleGenAI, Modality } from '@google/genai';
 
-// --- Audio Utilities (Manual implementation per guidelines) ---
+// --- Manual Audio Encoding/Decoding Utilities (Per Guidelines) ---
 
 function decode(base64: string) {
   const binaryString = atob(base64);
@@ -44,12 +44,12 @@ async function decodeAudioData(
 
 const VoiceAgent: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'connecting' | 'listening' | 'speaking'>('idle');
+  const [status, setStatus] = useState<'idle' | 'connecting' | 'listening' | 'speaking' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState<string>('');
   
-  // Audio Refs
+  // Audio Lifecycle Refs
   const inputAudioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
-  const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const sessionRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const nextStartTimeRef = useRef<number>(0);
@@ -57,24 +57,23 @@ const VoiceAgent: React.FC = () => {
 
   const SYSTEM_INSTRUCTION = `
     You are the Five Star Support Services (FSS) AI Concierge. 
-    You are professional, polite, and helpful. 
-    Knowledge:
-    - FSS provides premium commercial cleaning in East London (Ilford, Romford, Canary Wharf, Stratford) and South East.
-    - Founded in 2008.
-    - Specialized in: Offices, Schools (Education), Medical (Healthcare/CQC Compliant), Retail, Leisure.
-    - Features: DBS-vetted staff, £10m insurance, eco-friendly chemicals, 24/7 flexibility.
-    - Goal: Help users understand our services. If they want a quote, tell them to use the "Get Free Quote" button on our site or call +44 7917 157506.
-    Keep responses concise and spoken in a human-like, helpful tone.
+    You are professional, articulate, and premium.
+    Site Knowledge:
+    - FSS specializes in commercial cleaning for Offices, Healthcare (CQC compliant), Schools, and Retail.
+    - Coverage: Primarily East London (Ilford, Romford, Canary Wharf, Stratford) and the South East.
+    - Since 2008.
+    - Features: DBS-vetted staff, £10m insurance, eco-friendly practices.
+    - CTA: If users want a quote, tell them to call +44 7917 157506 or use the website forms.
+    Keep your voice responses helpful, warm, and concise.
   `;
 
   const stopSession = useCallback(() => {
     setStatus('idle');
     
     if (sessionRef.current) {
-      sessionRef.current.close?.();
+      try { sessionRef.current.close(); } catch (e) {}
       sessionRef.current = null;
     }
-    sessionPromiseRef.current = null;
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -82,7 +81,7 @@ const VoiceAgent: React.FC = () => {
     }
 
     if (inputAudioContextRef.current) {
-      inputAudioContextRef.current.close();
+      inputAudioContextRef.current.close().catch(() => {});
       inputAudioContextRef.current = null;
     }
 
@@ -94,10 +93,19 @@ const VoiceAgent: React.FC = () => {
   }, []);
 
   const startSession = async () => {
+    const apiKey = process.env.API_KEY;
+    
+    if (!apiKey) {
+      console.error('API Key missing');
+      setStatus('error');
+      setErrorMsg('API Configuration Required');
+      return;
+    }
+
     try {
       setStatus('connecting');
 
-      // Initialize contexts on user gesture
+      // Initialize Audio Contexts on user interaction
       const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       inputAudioContextRef.current = inputCtx;
@@ -106,7 +114,7 @@ const VoiceAgent: React.FC = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-12-2025',
@@ -118,35 +126,32 @@ const VoiceAgent: React.FC = () => {
             const scriptProcessor = inputCtx.createScriptProcessor(4096, 1, 1);
             
             scriptProcessor.onaudioprocess = (e) => {
-              if (setStatus === undefined) return; // Guard against stale closures
+              if (status === 'idle' || !sessionRef.current) return;
               const inputData = e.inputBuffer.getChannelData(0);
               const int16 = new Int16Array(inputData.length);
               for (let i = 0; i < inputData.length; i++) {
                 int16[i] = inputData[i] * 32768;
               }
-              const pcmBlob = {
-                data: encode(new Uint8Array(int16.buffer)),
-                mimeType: 'audio/pcm;rate=16000',
-              };
-              
-              // Only send if session is active
-              sessionPromise.then(session => {
-                session.sendRealtimeInput({ media: pcmBlob });
-              }).catch(() => {});
+              sessionRef.current.sendRealtimeInput({ 
+                media: {
+                  data: encode(new Uint8Array(int16.buffer)),
+                  mimeType: 'audio/pcm;rate=16000'
+                }
+              });
             };
             
             source.connect(scriptProcessor);
             scriptProcessor.connect(inputCtx.destination);
           },
           onmessage: async (message) => {
-            const base64 = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
-            if (base64) {
+            const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
+            if (base64Audio) {
               setStatus('speaking');
               const audioCtx = outputAudioContextRef.current;
               if (!audioCtx) return;
 
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, audioCtx.currentTime);
-              const audioBuffer = await decodeAudioData(decode(base64), audioCtx, 24000, 1);
+              const audioBuffer = await decodeAudioData(decode(base64Audio), audioCtx, 24000, 1);
               
               const source = audioCtx.createBufferSource();
               source.buffer = audioBuffer;
@@ -174,8 +179,10 @@ const VoiceAgent: React.FC = () => {
             }
           },
           onerror: (e) => {
-            console.error('Voice Agent Error:', e);
-            stopSession();
+            console.error('Session Error:', e);
+            setStatus('error');
+            setErrorMsg('Connection Interrupted');
+            setTimeout(stopSession, 3000);
           },
           onclose: () => {
             stopSession();
@@ -190,16 +197,17 @@ const VoiceAgent: React.FC = () => {
         }
       });
 
-      sessionPromiseRef.current = sessionPromise;
       sessionRef.current = await sessionPromise;
     } catch (err) {
-      console.error('Failed to start voice session:', err);
-      stopSession();
+      console.error('Startup Error:', err);
+      setStatus('error');
+      setErrorMsg('Access Denied');
+      setTimeout(stopSession, 3000);
     }
   };
 
   const toggleSession = () => {
-    if (status !== 'idle') {
+    if (status !== 'idle' && status !== 'error') {
       stopSession();
     } else {
       startSession();
@@ -211,120 +219,124 @@ const VoiceAgent: React.FC = () => {
   }, [stopSession]);
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4 pointer-events-none">
+    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-5 pointer-events-none">
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.9, filter: 'blur(10px)' }}
             animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: 30, scale: 0.9, filter: 'blur(10px)' }}
-            className="w-[340px] sm:w-[400px] bg-[#0a1a2f]/90 backdrop-blur-2xl border border-white/20 rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.5)] p-8 pointer-events-auto overflow-hidden relative"
+            className="w-[360px] sm:w-[420px] bg-[#0a1a2f]/95 backdrop-blur-3xl border border-white/20 rounded-[3.5rem] shadow-[0_40px_120px_rgba(0,0,0,0.6)] p-10 pointer-events-auto overflow-hidden relative"
           >
-            {/* Dynamic Background Glows */}
-            <div className={`absolute -top-24 -left-24 w-64 h-64 rounded-full blur-[80px] transition-colors duration-1000 ${
-              status === 'speaking' ? 'bg-amber-500/30' : 
-              status === 'listening' ? 'bg-blue-500/30' : 'bg-white/5'
+            {/* Dynamic Ambient Aura */}
+            <div className={`absolute -top-32 -left-32 w-80 h-80 rounded-full blur-[100px] transition-colors duration-1000 ${
+              status === 'speaking' ? 'bg-amber-500/40' : 
+              status === 'listening' ? 'bg-blue-500/40' : 
+              status === 'error' ? 'bg-red-500/30' : 'bg-white/5'
             }`}></div>
             
             <div className="relative z-10">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-10">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-2xl transition-all duration-500 ${
-                    status !== 'idle' ? 'bg-amber-500 text-[#0a1a2f] shadow-lg shadow-amber-500/20' : 'bg-white/10 text-white'
+              {/* Premium Header */}
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-2xl transition-all duration-700 ${
+                    status !== 'idle' && status !== 'error' ? 'bg-amber-500 text-[#0a1a2f] shadow-[0_0_20px_rgba(245,158,11,0.4)]' : 'bg-white/10 text-white'
                   }`}>
-                    <ShieldCheck className="w-5 h-5" />
+                    <ShieldCheck className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-white font-black text-sm uppercase tracking-widest">FSS Intelligence</h4>
-                    <div className="flex items-center gap-2">
+                    <h4 className="text-white font-black text-sm uppercase tracking-[0.2em]">FSS Concierge</h4>
+                    <div className="flex items-center gap-2 mt-0.5">
                       <div className={`w-1.5 h-1.5 rounded-full ${
-                        status === 'idle' ? 'bg-slate-600' : 'bg-amber-500 animate-pulse'
+                        status === 'idle' ? 'bg-slate-600' : 
+                        status === 'error' ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-amber-500 animate-pulse shadow-[0_0_10px_#f59e0b]'
                       }`}></div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                        {status === 'idle' ? 'Ready to Assist' : status.toUpperCase()}
+                      <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                        {status === 'error' ? errorMsg : status.toUpperCase()}
                       </span>
                     </div>
                   </div>
                 </div>
                 <button 
                   onClick={() => setIsOpen(false)}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white"
+                  className="p-3 hover:bg-white/10 rounded-full transition-all text-slate-400 hover:text-white"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Main Interaction Area */}
-              <div className="flex flex-col items-center py-6">
-                <div className="relative mb-12">
-                  {/* Outer Rings */}
+              {/* Central Interaction Stage */}
+              <div className="flex flex-col items-center py-8">
+                <div className="relative mb-14">
                   <AnimatePresence>
                     {(status === 'speaking' || status === 'listening') && (
-                      <>
-                        <motion.div
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: [1, 1.4, 1], opacity: [0.1, 0.3, 0.1] }}
-                          transition={{ repeat: Infinity, duration: 2 }}
-                          className={`absolute inset-0 rounded-full blur-2xl ${
-                            status === 'speaking' ? 'bg-amber-500' : 'bg-blue-400'
-                          }`}
-                        />
-                        <motion.div
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-                          transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}
-                          className={`absolute inset-0 rounded-full blur-xl ${
-                            status === 'speaking' ? 'bg-amber-400' : 'bg-blue-300'
-                          }`}
-                        />
-                      </>
+                      <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.1, 0.4, 0.1] }}
+                        transition={{ repeat: Infinity, duration: 2.5 }}
+                        className={`absolute inset-0 rounded-full blur-3xl ${
+                          status === 'speaking' ? 'bg-amber-500' : 'bg-blue-500'
+                        }`}
+                      />
                     )}
                   </AnimatePresence>
 
-                  {/* Core Mic Button */}
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.92 }}
                     onClick={toggleSession}
                     disabled={status === 'connecting'}
-                    className={`relative w-28 h-28 rounded-full flex items-center justify-center transition-all duration-500 z-10 border-4 ${
+                    className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all duration-500 z-10 border-[6px] ${
+                      status === 'error' ? 'bg-red-500/20 border-red-500/50 text-red-400' :
                       status !== 'idle' 
-                        ? 'bg-amber-500 border-white/20 text-[#0a1a2f] shadow-2xl shadow-amber-500/40' 
-                        : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                        ? 'bg-amber-500 border-white/30 text-[#0a1a2f] shadow-[0_0_50px_rgba(245,158,11,0.3)]' 
+                        : 'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20'
                     }`}
                   >
                     {status === 'connecting' ? (
-                      <Loader2 className="w-10 h-10 animate-spin" />
+                      <Loader2 className="w-12 h-12 animate-spin" />
                     ) : status === 'speaking' ? (
-                      <Volume2 className="w-10 h-10 animate-bounce" />
+                      <div className="flex gap-1.5 items-end">
+                        {[1, 2, 3].map(i => (
+                          <motion.div 
+                            key={i}
+                            animate={{ height: [12, 32, 12] }}
+                            transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.2 }}
+                            className="w-2 bg-[#0a1a2f] rounded-full"
+                          />
+                        ))}
+                      </div>
                     ) : status === 'listening' ? (
-                      <Waves className="w-10 h-10 animate-pulse" />
+                      <Waves className="w-12 h-12 animate-pulse" />
+                    ) : status === 'error' ? (
+                      <AlertCircle className="w-12 h-12" />
                     ) : (
-                      <MicOff className="w-10 h-10 opacity-40" />
+                      <Mic className="w-12 h-12 opacity-80" />
                     )}
                   </motion.button>
                 </div>
 
-                <div className="text-center px-4">
-                  <h3 className="text-white text-2xl font-black mb-3 tracking-tight">
-                    {status === 'idle' ? 'Start Conversation' : 
-                     status === 'connecting' ? 'Establishing Secure Link' :
-                     status === 'listening' ? 'Listening to You...' : 'Agent is Speaking'}
+                <div className="text-center px-6">
+                  <h3 className="text-white text-3xl font-black mb-4 tracking-tight">
+                    {status === 'idle' ? 'Live Assistant' : 
+                     status === 'connecting' ? 'Establishing Link' :
+                     status === 'listening' ? 'Listening...' : 
+                     status === 'speaking' ? 'AI Speaking' : 'System Offline'}
                   </h3>
-                  <p className="text-slate-400 text-sm font-light leading-relaxed mb-8">
+                  <p className="text-slate-400 text-sm font-light leading-relaxed mb-6">
                     {status === 'idle' 
-                      ? "Tap the mic to talk with our AI Concierge about cleaning schedules, sectors, or quotes." 
-                      : "I'm connected and ready to discuss our Five Star services in East London."}
+                      ? "Tap to begin a real-time voice consultation with our facility experts." :
+                      status === 'error' ? "We encountered an issue connecting to the AI core. Please try again shortly."
+                      : "Discussing premium cleaning solutions for your London facilities."}
                   </p>
                 </div>
               </div>
 
-              {/* Footer Info */}
-              <div className="flex items-center justify-center gap-2 pt-6 border-t border-white/10">
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                  Encrypted Voice Channel
+              {/* Status Footer */}
+              <div className="flex items-center justify-center gap-3 pt-8 border-t border-white/10 opacity-60">
+                <Headphones className="w-4 h-4 text-amber-500" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                  Encrypted AI Stream
                 </span>
               </div>
             </div>
@@ -332,40 +344,26 @@ const VoiceAgent: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Floating Toggle Button */}
+      {/* Primary Floating Trigger */}
       <motion.button
         whileHover={{ scale: 1.05, y: -5 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-16 h-16 bg-amber-500 rounded-2xl shadow-[0_20px_50px_rgba(245,158,11,0.4)] flex items-center justify-center text-[#0a1a2f] pointer-events-auto border-4 border-[#0a1a2f] group relative"
+        className="w-18 h-18 bg-amber-500 rounded-3xl shadow-[0_25px_60px_rgba(245,158,11,0.5)] flex items-center justify-center text-[#0a1a2f] pointer-events-auto border-4 border-[#0a1a2f] group relative"
       >
         <AnimatePresence mode="wait">
-          {isOpen ? (
-            <motion.div
-              key="close"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-            >
-              <X className="w-7 h-7" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="chat"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-            >
-              <MessageSquareText className="w-7 h-7" />
-            </motion.div>
-          )}
+          {isOpen ? <X className="w-8 h-8" key="x" /> : <MessageSquareText className="w-8 h-8" key="msg" />}
         </AnimatePresence>
         
         {!isOpen && (
-          <div className="absolute right-20 bg-white text-[#0a1a2f] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-xl border border-slate-100 hidden sm:block">
-            Voice Assistant Active
-            <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 border-l-8 border-l-white border-y-8 border-y-transparent"></div>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="absolute right-24 bg-white text-[#0a1a2f] px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest whitespace-nowrap shadow-2xl border border-slate-100 hidden sm:block"
+          >
+            Talk to an Expert
+            <div className="absolute right-[-8px] top-1/2 -translate-y-1/2 border-l-[10px] border-l-white border-y-[10px] border-y-transparent"></div>
+          </motion.div>
         )}
       </motion.button>
     </div>

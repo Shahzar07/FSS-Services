@@ -46,10 +46,15 @@
         }
       }
     </style>
+    <script>
+      // Polyfill for process.env to ensure GenAI SDK works in all environments
+      window.process = window.process || { env: { API_KEY: '' } };
+    </script>
     <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@19.0.0",
+    "react/": "https://esm.sh/react@19.0.0/",
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react,react-dom",
@@ -57,9 +62,8 @@
     "leaflet": "https://esm.sh/leaflet@1.9.4",
     "react-leaflet": "https://esm.sh/react-leaflet@4.2.1?external=react,react-dom,leaflet",
     "react-router-dom": "https://esm.sh/react-router-dom@7.1.5?external=react,react-dom",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.35.0"
+    "@google/genai": "https://esm.sh/@google/genai@1.35.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
 </script>
