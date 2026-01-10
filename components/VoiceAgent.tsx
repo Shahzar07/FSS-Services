@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, X, MessageSquareText, ShieldCheck, Loader2, Volume2, Waves, AlertCircle, Headphones } from 'lucide-react';
 import { GoogleGenAI, Modality } from '@google/genai';
 
-// --- Manual Audio Encoding/Decoding Utilities (Per Guidelines) ---
+// --- Manual Audio Encoding/Decoding Utilities ---
 
 function decode(base64: string) {
   const binaryString = atob(base64);
@@ -47,7 +47,6 @@ const VoiceAgent: React.FC = () => {
   const [status, setStatus] = useState<'idle' | 'connecting' | 'listening' | 'speaking' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string>('');
   
-  // Audio Lifecycle Refs
   const inputAudioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
   const sessionRef = useRef<any>(null);
@@ -98,14 +97,13 @@ const VoiceAgent: React.FC = () => {
     if (!apiKey) {
       console.error('API Key missing');
       setStatus('error');
-      setErrorMsg('API Configuration Required');
+      setErrorMsg('API Key Required');
       return;
     }
 
     try {
       setStatus('connecting');
 
-      // Initialize Audio Contexts on user interaction
       const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       inputAudioContextRef.current = inputCtx;
@@ -181,7 +179,7 @@ const VoiceAgent: React.FC = () => {
           onerror: (e) => {
             console.error('Session Error:', e);
             setStatus('error');
-            setErrorMsg('Connection Interrupted');
+            setErrorMsg('Connection Error');
             setTimeout(stopSession, 3000);
           },
           onclose: () => {
@@ -201,7 +199,7 @@ const VoiceAgent: React.FC = () => {
     } catch (err) {
       console.error('Startup Error:', err);
       setStatus('error');
-      setErrorMsg('Access Denied');
+      setErrorMsg('Mic Access Denied');
       setTimeout(stopSession, 3000);
     }
   };
@@ -228,7 +226,6 @@ const VoiceAgent: React.FC = () => {
             exit={{ opacity: 0, y: 30, scale: 0.9, filter: 'blur(10px)' }}
             className="w-[360px] sm:w-[420px] bg-[#0a1a2f]/95 backdrop-blur-3xl border border-white/20 rounded-[3.5rem] shadow-[0_40px_120px_rgba(0,0,0,0.6)] p-10 pointer-events-auto overflow-hidden relative"
           >
-            {/* Dynamic Ambient Aura */}
             <div className={`absolute -top-32 -left-32 w-80 h-80 rounded-full blur-[100px] transition-colors duration-1000 ${
               status === 'speaking' ? 'bg-amber-500/40' : 
               status === 'listening' ? 'bg-blue-500/40' : 
@@ -236,7 +233,6 @@ const VoiceAgent: React.FC = () => {
             }`}></div>
             
             <div className="relative z-10">
-              {/* Premium Header */}
               <div className="flex items-center justify-between mb-12">
                 <div className="flex items-center gap-4">
                   <div className={`p-3 rounded-2xl transition-all duration-700 ${
@@ -265,7 +261,6 @@ const VoiceAgent: React.FC = () => {
                 </button>
               </div>
 
-              {/* Central Interaction Stage */}
               <div className="flex flex-col items-center py-8">
                 <div className="relative mb-14">
                   <AnimatePresence>
@@ -326,17 +321,16 @@ const VoiceAgent: React.FC = () => {
                   <p className="text-slate-400 text-sm font-light leading-relaxed mb-6">
                     {status === 'idle' 
                       ? "Tap to begin a real-time voice consultation with our facility experts." :
-                      status === 'error' ? "We encountered an issue connecting to the AI core. Please try again shortly."
-                      : "Discussing premium cleaning solutions for your London facilities."}
+                      status === 'error' ? "Connection error. Please try again shortly."
+                      : "Discussing premium cleaning solutions for your facilities."}
                   </p>
                 </div>
               </div>
 
-              {/* Status Footer */}
               <div className="flex items-center justify-center gap-3 pt-8 border-t border-white/10 opacity-60">
                 <Headphones className="w-4 h-4 text-amber-500" />
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                  Encrypted AI Stream
+                  Secure AI Channel
                 </span>
               </div>
             </div>
@@ -344,7 +338,6 @@ const VoiceAgent: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Primary Floating Trigger */}
       <motion.button
         whileHover={{ scale: 1.05, y: -5 }}
         whileTap={{ scale: 0.95 }}
