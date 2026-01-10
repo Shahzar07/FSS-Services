@@ -1,0 +1,7 @@
+{
+  "name": "FSS Commercial Cleaning Services",
+  "description": "A premium, modern commercial cleaning website for UK-based FSS Commercial Cleaning Services, featuring smooth navigation, eco-friendly focus, and professional design.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
