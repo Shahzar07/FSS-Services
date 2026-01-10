@@ -55,7 +55,7 @@
         console.error("Runtime Error:", msg, "at", url, ":", line);
         var root = document.getElementById('root');
         if (root && root.innerHTML === "") {
-          root.innerHTML = '<div style="padding: 40px; text-align: center; color: #ef4444; font-family: sans-serif;"><h2>Application Load Error</h2><p>' + msg + '</p></div>';
+          root.innerHTML = '<div style="padding: 40px; text-align: center; color: #ef4444; font-family: sans-serif;"><h2>Application Load Error</h2><p>' + msg + '</p><p style="font-size: 12px; color: #666;">Check browser console for details.</p></div>';
         }
         return false;
       };
