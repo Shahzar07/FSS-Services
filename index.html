@@ -52,10 +52,10 @@
     </style>
     <script>
       window.onerror = function(msg, url, line, col, error) {
-        console.error("Runtime Error:", msg, "at", url, ":", line);
+        console.error("Critical Runtime Error:", msg, "at", url, ":", line);
         var root = document.getElementById('root');
         if (root && root.innerHTML === "") {
-          root.innerHTML = '<div style="padding: 40px; text-align: center; color: #ef4444; font-family: sans-serif;"><h2>Application Load Error</h2><p>' + msg + '</p><p style="font-size: 14px; color: #666;">Check browser console for details.</p></div>';
+          root.innerHTML = '<div style="padding: 40px; text-align: center; color: #ef4444; font-family: sans-serif; background: white; height: 100vh;"><h2>Application Error</h2><p>' + msg + '</p><p style="font-size: 14px; color: #666;">Check the browser console for more details.</p><button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #0a1a2f; color: white; border: none; border-radius: 8px; cursor: pointer;">Reload Application</button></div>';
         }
         return false;
       };
