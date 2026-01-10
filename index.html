@@ -51,7 +51,19 @@
       }
     </style>
     <script>
-      window.process = { env: { API_KEY: '' } };
+      // Global error logging to catch silent production crashes
+      window.onerror = function(msg, url, line, col, error) {
+        console.error("Runtime Error:", msg, "at", url, ":", line);
+        return false;
+      };
+      window.onunhandledrejection = function(event) {
+        console.error("Unhandled Promise Rejection:", event.reason);
+      };
+      // Robust process polyfill
+      window.process = { 
+        env: { API_KEY: '' },
+        nextTick: function(fn) { setTimeout(fn, 0); }
+      };
     </script>
     <script type="importmap">
 {
@@ -61,11 +73,11 @@
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
-    "lucide-react": "https://esm.sh/lucide-react@0.475.0?bundle&deps=react@19.0.0",
-    "framer-motion": "https://esm.sh/framer-motion@11.11.11?bundle&deps=react@19.0.0,react-dom@19.0.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.475.0?deps=react@19.0.0",
+    "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@19.0.0,react-dom@19.0.0",
     "leaflet": "https://esm.sh/leaflet@1.9.4",
-    "react-leaflet": "https://esm.sh/react-leaflet@4.2.1?bundle&deps=react@19.0.0,react-dom@19.0.0,leaflet@1.9.4",
-    "react-router-dom": "https://esm.sh/react-router-dom@7.1.5?bundle&deps=react@19.0.0,react-dom@19.0.0",
+    "react-leaflet": "https://esm.sh/react-leaflet@4.2.1?deps=react@19.0.0,react-dom@19.0.0,leaflet@1.9.4",
+    "react-router-dom": "https://esm.sh/react-router-dom@7.1.5?deps=react@19.0.0,react-dom@19.0.0",
     "@google/genai": "https://esm.sh/@google/genai@1.35.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
