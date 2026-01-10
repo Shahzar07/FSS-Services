@@ -3,37 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Five Star Support Services | Professional Commercial Cleaning East London</title>
+    <title>FSS Commercial Cleaning Services | Professional UK Experts</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f8fafc;
-        margin: 0;
-      }
-      .leaflet-container {
-        width: 100%;
-        height: 100%;
-        border-radius: 1.5rem;
-        background: #020617;
-      }
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f1f1;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #0a1a2f;
-        border-radius: 10px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #f59e0b;
-      }
+      body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; }
+      .leaflet-container { width: 100%; height: 100%; border-radius: 1.5rem; background: #020617; }
       #root:empty::before {
         content: "";
         display: block;
@@ -45,23 +23,21 @@
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
     <script>
+      window.process = { env: { API_KEY: '' }, nextTick: (fn) => setTimeout(fn, 0) };
       window.onerror = function(msg, url, line, col, error) {
-        console.error("Critical Runtime Error:", msg, "at", url, ":", line);
-        var root = document.getElementById('root');
+        if (msg.includes("Script error")) return;
+        console.error("Critical Error:", msg);
+        const root = document.getElementById('root');
         if (root && root.innerHTML === "") {
-          root.innerHTML = '<div style="padding: 40px; text-align: center; color: #ef4444; font-family: sans-serif; background: white; height: 100vh;"><h2>Application Error</h2><p>' + msg + '</p><p style="font-size: 14px; color: #666;">Check the browser console for more details.</p><button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #0a1a2f; color: white; border: none; border-radius: 8px; cursor: pointer;">Reload Application</button></div>';
+          root.innerHTML = `<div style="padding: 40px; text-align: center; font-family: sans-serif;">
+            <h2 style="color: #ef4444;">Application Error</h2>
+            <p style="color: #666;">${msg}</p>
+            <button onclick="window.location.reload()" style="padding: 10px 20px; background: #0a1a2f; color: white; border: none; border-radius: 8px; cursor: pointer;">Reload Site</button>
+          </div>`;
         }
-        return false;
-      };
-      window.process = { 
-        env: { API_KEY: '' },
-        nextTick: function(fn) { setTimeout(fn, 0); }
       };
     </script>
     <script type="importmap">
@@ -72,10 +48,10 @@
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
     "lucide-react": "https://esm.sh/lucide-react@0.475.0?deps=react@19.0.0",
-    "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@19.0.0,react-dom@19.0.0",
+    "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@19.0.0",
     "leaflet": "https://esm.sh/leaflet@1.9.4",
-    "react-leaflet": "https://esm.sh/react-leaflet@4.2.1?deps=react@19.0.0,react-dom@19.0.0,leaflet@1.9.4",
-    "react-router-dom": "https://esm.sh/react-router-dom@7.1.5?deps=react@19.0.0,react-dom@19.0.0",
+    "react-leaflet": "https://esm.sh/react-leaflet@4.2.1?deps=react@19.0.0,leaflet@1.9.4",
+    "react-router-dom": "https://esm.sh/react-router-dom@7.1.5?deps=react@19.0.0",
     "@google/genai": "https://esm.sh/@google/genai@1.35.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/"
@@ -83,7 +59,7 @@
 }
 </script>
   </head>
-  <body class="bg-white text-slate-900">
+  <body>
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
   </body>
