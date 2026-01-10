@@ -27,17 +27,20 @@
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
     <script>
-      // Global configuration and error handling
+      // Global configuration
       window.process = { env: { API_KEY: '' }, nextTick: (fn) => setTimeout(fn, 0) };
+      
+      // Error handling to replace the loader if things go wrong
       window.onerror = function(msg, url, line, col, error) {
-        console.error("Critical Runtime Error:", msg, "at", url, ":", line);
+        console.error("FSS Critical Error:", msg);
         const root = document.getElementById('root');
-        // If the app crashed before mounting, show a friendly error instead of a white page
         if (root && (root.innerHTML === "" || root.innerHTML.includes('before'))) {
           root.innerHTML = `<div style="padding: 40px; text-align: center; font-family: sans-serif; background: white; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <h2 style="color: #ef4444; font-weight: 800; font-size: 2rem; margin-bottom: 1rem;">Application Error</h2>
-            <p style="color: #64748b; max-width: 500px; margin-bottom: 2rem;">${msg}</p>
-            <button onclick="window.location.reload()" style="padding: 12px 24px; background: #0a1a2f; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Reload Application</button>
+            <div style="background: #fee2e2; border: 1px solid #ef4444; padding: 2rem; border-radius: 1.5rem; max-width: 500px;">
+              <h2 style="color: #b91c1c; font-weight: 800; font-size: 1.5rem; margin-bottom: 0.5rem;">Connection or Startup Error</h2>
+              <p style="color: #7f1d1d; margin-bottom: 1.5rem; font-size: 14px;">${msg}</p>
+              <button onclick="window.location.reload()" style="padding: 12px 24px; background: #0a1a2f; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Reload Application</button>
+            </div>
           </div>`;
         }
         return false;
