@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -8,6 +7,10 @@ import { Users, Building, MapPin, Search } from 'lucide-react';
 
 // Custom Marker Component
 const MapMarker: React.FC<{ region: any }> = ({ region }) => {
+  if (!region || typeof region.lat !== 'number' || typeof region.lng !== 'number' || isNaN(region.lat) || isNaN(region.lng)) {
+    return null;
+  }
+
   const customIcon = L.divIcon({
     className: 'custom-marker',
     html: `
@@ -47,14 +50,32 @@ const MapMarker: React.FC<{ region: any }> = ({ region }) => {
 // Component to handle map focus
 const MapFocus = ({ center }: { center: [number, number] }) => {
   const map = useMap();
+  
   useEffect(() => {
-    map.flyTo(center, 12, { duration: 1.5 });
+    if (center && Array.isArray(center) && center.length === 2) {
+      const lat = Number(center[0]);
+      const lng = Number(center[1]);
+      
+      if (!isNaN(lat) && !isNaN(lng)) {
+        try {
+          // Wrap in requestAnimationFrame to ensure map is ready to receive commands
+          requestAnimationFrame(() => {
+             map.flyTo([lat, lng] as L.LatLngExpression, 12, { duration: 1.5 });
+          });
+        } catch (e) {
+          console.warn("Leaflet FlyTo suppressed:", e);
+        }
+      }
+    }
   }, [center, map]);
+  
   return null;
 };
 
 const Coverage: React.FC = () => {
-  const [activeRegion, setActiveRegion] = useState(REGIONS[0]);
+  // Ensure we have a valid initial region
+  const initialRegion = REGIONS && REGIONS.length > 0 ? REGIONS[0] : { name: 'London', lat: 51.505, lng: -0.09, staff: 0, clients: 0 };
+  const [activeRegion, setActiveRegion] = useState(initialRegion);
 
   return (
     <section id="coverage" className="py-20 sm:py-32 bg-[#0a1a2f] text-white overflow-hidden">
@@ -125,10 +146,12 @@ const Coverage: React.FC = () => {
               {REGIONS.map((region) => (
                 <MapMarker key={region.name} region={region} />
               ))}
-              <MapFocus center={[activeRegion.lat, activeRegion.lng]} />
+              {activeRegion && !isNaN(activeRegion.lat) && !isNaN(activeRegion.lng) && (
+                <MapFocus center={[activeRegion.lat, activeRegion.lng]} />
+              )}
             </MapContainer>
 
-            {/* Overlays - Hidden on smallest mobile screens for clarity */}
+            {/* Overlays */}
             <div className="hidden sm:flex absolute top-8 left-8 z-10 bg-[#0a1a2f]/80 backdrop-blur-lg border border-white/10 p-4 sm:p-6 rounded-2xl sm:rounded-3xl items-center gap-4">
               <div className="p-3 bg-amber-500 rounded-xl sm:rounded-2xl">
                 <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#0a1a2f]" />
