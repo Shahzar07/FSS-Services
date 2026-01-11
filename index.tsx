@@ -5,25 +5,36 @@ import App from './App.tsx';
 
 /**
  * FSS Commercial Cleaning Services
- * Production Bootstrapper
+ * Resilient Production Bootstrapper
  */
 
-// Initialize Leaflet globally
+console.log("FSS: Starting application sequence...");
+
+// Initialize Leaflet globally before any React components mount
 if (typeof window !== 'undefined') {
   (window as any).L = L;
+  console.log("FSS: Leaflet library initialized globally.");
 }
 
 const container = document.getElementById('root');
 
 if (container) {
   try {
+    console.log("FSS: Target container found. Initializing React Root...");
     const root = createRoot(container);
-    // Directly render the app to avoid any StrictMode side effects during initial load
+    
+    // Explicitly render without StrictMode to ensure maximum module stability
     root.render(<App />);
+    
+    console.log("FSS: Initial render dispatched.");
   } catch (err) {
     console.error("FSS: Fatal mount error:", err);
-    container.innerHTML = `<div style="padding: 20px; color: red;">Startup failed: ${String(err)}</div>`;
+    container.innerHTML = `
+      <div style="padding: 20px; color: red; font-family: sans-serif; text-align: center;">
+        <h3 style="margin-bottom: 10px;">Application Startup Failed</h3>
+        <p>Technical Error: ${String(err)}</p>
+      </div>`;
   }
 } else {
-  console.error("FSS: Root container not found.");
+  console.error("FSS: CRITICAL - Root container '#root' not found in the DOM.");
 }

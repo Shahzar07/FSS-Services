@@ -30,7 +30,7 @@
       @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
     <script>
-      // Global config and polyfills
+      // Global configuration to prevent library crashes and polyfill process
       window.process = { 
         env: { API_KEY: '' }, 
         nextTick: (fn) => setTimeout(fn, 0),
@@ -38,9 +38,9 @@
         browser: true
       };
       
-      // Global error handler
+      // Detailed error reporting for production debugging
       window.onerror = function(msg, url, line, col, error) {
-        console.error("FSS Load Error:", msg, error);
+        console.error("FSS Application Crash:", msg, error);
         const root = document.getElementById('root');
         if (root && root.innerHTML === "") {
           root.innerHTML = `
@@ -49,9 +49,9 @@
                 <div style="background: #fee2e2; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
                    <span style="color: #ef4444; font-size: 24px; font-weight: bold;">!</span>
                 </div>
-                <h2 style="color: #0f172a; font-weight: 800; margin-bottom: 1rem; font-size: 1.5rem;">Startup Error</h2>
-                <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; line-height: 1.6;">${msg}</p>
-                <button onclick="window.location.reload()" style="width: 100%; padding: 16px; background: #0a1a2f; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Refresh Page</button>
+                <h2 style="color: #0f172a; font-weight: 800; margin-bottom: 1rem; font-size: 1.5rem;">System Error</h2>
+                <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; line-height: 1.6;">The application encountered a fatal loading error. This is often due to version conflicts. <br/><br/>Error: ${msg}</p>
+                <button onclick="window.location.reload()" style="width: 100%; padding: 16px; background: #0a1a2f; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Refresh Application</button>
               </div>
             </div>`;
         }
@@ -71,8 +71,8 @@
     "react-leaflet": "https://esm.sh/react-leaflet@4.2.1?deps=react@19.0.0,react-dom@19.0.0,leaflet@1.9.4",
     "react-router-dom": "https://esm.sh/react-router-dom@7.1.5?deps=react@19.0.0,react-dom@19.0.0",
     "@google/genai": "https://esm.sh/@google/genai@1.35.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "react/": "https://esm.sh/react@19.0.0/",
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/"
   }
 }
 </script>
