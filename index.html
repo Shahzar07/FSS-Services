@@ -15,7 +15,7 @@
       
       /* inform user that system is starting */
       #root:empty::after {
-        content: "Starting Five Star Support Systems...";
+        content: "Initializing Five Star Systems...";
         position: fixed;
         top: 50%;
         left: 50%;
@@ -23,15 +23,20 @@
         font-weight: 800;
         color: #0a1a2f;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        font-size: 0.7rem;
+        letter-spacing: 0.15em;
+        font-size: 0.75rem;
         animation: pulse 2s infinite;
       }
       @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     </style>
     <script>
       // Global configuration to prevent library crashes and polyfill process
-      window.process = { env: { API_KEY: '' }, nextTick: (fn) => setTimeout(fn, 0) };
+      window.process = { 
+        env: { API_KEY: '' }, 
+        nextTick: (fn) => setTimeout(fn, 0),
+        cwd: () => '/',
+        browser: true
+      };
       
       // Global error handler to provide feedback if mounting fails
       window.onerror = function(msg, url, line, col, error) {
@@ -44,9 +49,9 @@
                 <div style="background: #fee2e2; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
                    <span style="color: #ef4444; font-size: 24px; font-weight: bold;">!</span>
                 </div>
-                <h2 style="color: #0f172a; font-weight: 800; margin-bottom: 1rem; font-size: 1.5rem;">Connection Error</h2>
-                <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; line-height: 1.6;">We're having trouble reaching the application servers. This may be due to a network timeout.</p>
-                <button onclick="window.location.reload()" style="width: 100%; padding: 16px; background: #0a1a2f; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Refresh Page</button>
+                <h2 style="color: #0f172a; font-weight: 800; margin-bottom: 1rem; font-size: 1.5rem;">System Load Failure</h2>
+                <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; line-height: 1.6;">The application encountered a fatal error during initialization: <br/><code style="background:#f1f5f9;padding:2px 4px;border-radius:4px;word-break:break-all;">${msg}</code></p>
+                <button onclick="window.location.reload()" style="width: 100%; padding: 16px; background: #0a1a2f; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Reload Application</button>
               </div>
             </div>`;
         }
