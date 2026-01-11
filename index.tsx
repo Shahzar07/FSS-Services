@@ -5,38 +5,24 @@ import App from './App.tsx';
 
 /**
  * FSS Commercial Cleaning Services
- * React 19 Unified Entry Point
+ * React 19 Stable Entry Point
  */
 
-// 1. Initialize Leaflet globally for react-leaflet components
+// Initialize Leaflet globally before any React components mount
 if (typeof window !== 'undefined') {
   (window as any).L = L;
 }
 
-const mountApp = () => {
-  const container = document.getElementById('root');
-  if (!container) return;
+const container = document.getElementById('root');
 
-  try {
-    const root = createRoot(container);
-    root.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    );
-    console.log("FSS App Mounted Successfully.");
-  } catch (err) {
-    console.error("Mount Error:", err);
-    container.innerHTML = `<div style="padding: 40px; text-align: center; font-family: sans-serif;">
-      <h2 style="color: red;">Failed to start</h2>
-      <p>${String(err)}</p>
-    </div>`;
-  }
-};
-
-// Ensure DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', mountApp);
+if (container) {
+  const root = createRoot(container);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+  console.log("FSS Application Loaded Successfully.");
 } else {
-  mountApp();
+  console.error("FSS Error: Root container '#root' was not found.");
 }

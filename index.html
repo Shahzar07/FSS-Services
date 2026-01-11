@@ -10,38 +10,32 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-      body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; }
+      body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; overflow-x: hidden; }
       .leaflet-container { width: 100%; height: 100%; border-radius: 1.5rem; background: #020617; }
-      /* The spinner that appears while JS is loading */
-      #root:empty::before {
-        content: "";
-        display: block;
-        width: 40px;
-        height: 40px;
-        margin: 45vh auto;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #f59e0b;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      
+      /* Remove previous pseudo-element loader to prevent it from masking crashes */
+      #root { min-height: 100vh; }
     </style>
     <script>
       // Global configuration
       window.process = { env: { API_KEY: '' }, nextTick: (fn) => setTimeout(fn, 0) };
       
-      // Error handling to replace the loader if things go wrong
+      // Error handling to provide feedback if something goes wrong
       window.onerror = function(msg, url, line, col, error) {
         console.error("FSS Critical Error:", msg);
         const root = document.getElementById('root');
-        if (root && (root.innerHTML === "" || root.innerHTML.includes('before'))) {
-          root.innerHTML = `<div style="padding: 40px; text-align: center; font-family: sans-serif; background: white; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <div style="background: #fee2e2; border: 1px solid #ef4444; padding: 2rem; border-radius: 1.5rem; max-width: 500px;">
-              <h2 style="color: #b91c1c; font-weight: 800; font-size: 1.5rem; margin-bottom: 0.5rem;">Connection or Startup Error</h2>
-              <p style="color: #7f1d1d; margin-bottom: 1.5rem; font-size: 14px;">${msg}</p>
-              <button onclick="window.location.reload()" style="padding: 12px 24px; background: #0a1a2f; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Reload Application</button>
-            </div>
-          </div>`;
+        if (root && root.innerHTML === "") {
+          root.innerHTML = `
+            <div style="padding: 40px; text-align: center; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff;">
+              <div style="max-width: 400px; border: 1px solid #e2e8f0; padding: 2.5rem; border-radius: 2rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+                <div style="background: #fee2e2; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                   <span style="color: #ef4444; font-size: 30px; font-weight: bold;">!</span>
+                </div>
+                <h2 style="color: #0f172a; font-weight: 800; margin-bottom: 0.75rem; font-size: 1.5rem;">Connection Error</h2>
+                <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; line-height: 1.6;">The application failed to start properly. Please check your connection and try refreshing.</p>
+                <button onclick="window.location.reload()" style="width: 100%; padding: 14px 24px; background: #0a1a2f; color: white; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">Refresh Page</button>
+              </div>
+            </div>`;
         }
         return false;
       };
