@@ -12,9 +12,10 @@
     <style>
       body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; overflow-x: hidden; }
       #root { min-height: 100vh; }
-      /* Temporary indicator while scripts load */
+      
+      /* inform user that system is starting */
       #root:empty::after {
-        content: "Initializing Five Star Systems...";
+        content: "Starting Five Star Support Systems...";
         position: fixed;
         top: 50%;
         left: 50%;
@@ -22,27 +23,30 @@
         font-weight: 800;
         color: #0a1a2f;
         text-transform: uppercase;
-        letter-spacing: 0.2em;
-        font-size: 0.75rem;
-        animation: pulse 1.5s infinite;
+        letter-spacing: 0.1em;
+        font-size: 0.7rem;
+        animation: pulse 2s infinite;
       }
-      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     </style>
     <script>
-      // Global configuration to prevent library crashes
+      // Global configuration to prevent library crashes and polyfill process
       window.process = { env: { API_KEY: '' }, nextTick: (fn) => setTimeout(fn, 0) };
       
       // Global error handler to provide feedback if mounting fails
       window.onerror = function(msg, url, line, col, error) {
-        console.error("FSS Critical Error:", msg);
+        console.error("FSS Critical Startup Error:", msg);
         const root = document.getElementById('root');
         if (root && root.innerHTML === "") {
           root.innerHTML = `
             <div style="padding: 40px; text-align: center; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff;">
-              <div style="max-width: 400px; border: 1px solid #e2e8f0; padding: 2.5rem; border-radius: 2rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-                <h2 style="color: #ef4444; font-weight: 800; margin-bottom: 0.75rem; font-size: 1.5rem;">System Error</h2>
-                <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; line-height: 1.6;">${msg}</p>
-                <button onclick="window.location.reload()" style="width: 100%; padding: 14px 24px; background: #0a1a2f; color: white; border: none; border-radius: 14px; font-weight: 700; cursor: pointer;">Try Again</button>
+              <div style="max-width: 450px; border: 1px solid #e2e8f0; padding: 3rem; border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1);">
+                <div style="background: #fee2e2; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                   <span style="color: #ef4444; font-size: 24px; font-weight: bold;">!</span>
+                </div>
+                <h2 style="color: #0f172a; font-weight: 800; margin-bottom: 1rem; font-size: 1.5rem;">Connection Error</h2>
+                <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; line-height: 1.6;">We're having trouble reaching the application servers. This may be due to a network timeout.</p>
+                <button onclick="window.location.reload()" style="width: 100%; padding: 16px; background: #0a1a2f; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Refresh Page</button>
               </div>
             </div>`;
         }

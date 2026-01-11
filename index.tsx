@@ -5,13 +5,12 @@ import App from './App.tsx';
 
 /**
  * FSS Commercial Cleaning Services
- * React 19 Entry Point
+ * Production Bootstrapper
  */
 
-// 1. Globally expose Leaflet for react-leaflet dependency resolution
+// 1. Initialize Leaflet globally before any components attempt to use it
 if (typeof window !== 'undefined') {
   (window as any).L = L;
-  console.log("FSS: Leaflet initialized.");
 }
 
 const container = document.getElementById('root');
@@ -19,12 +18,16 @@ const container = document.getElementById('root');
 if (container) {
   try {
     const root = createRoot(container);
-    root.render(<App />);
-    console.log("FSS: React successfully mounted to DOM.");
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+    console.log("FSS App successfully mounted.");
   } catch (err) {
-    console.error("FSS: React mount failed:", err);
-    container.innerHTML = `<div style="padding: 20px; color: red;">Mount Failure: ${String(err)}</div>`;
+    console.error("FSS Mount Error:", err);
+    container.innerHTML = `<div style="padding: 20px; text-align: center;">Startup failed. Please refresh.</div>`;
   }
 } else {
-  console.error("FSS: #root container missing.");
+  console.error("FSS Critical: Target container '#root' not found in document.");
 }
